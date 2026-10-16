@@ -24,3 +24,7 @@ keystore.properties
 *.bak
 *.patch
 node_modules/
+.env
+*.jks
+*.keystore
+*.pem
