@@ -1,0 +1,52 @@
+name: iOS (compilation de contrôle + IPA signé optionnel)
+on:
+  workflow_dispatch:
+    inputs:
+      signer:
+        description: "Créer un IPA signé (nécessite les secrets Apple)"
+        type: boolean
+        default: false
+jobs:
+  verifier:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+      - name: Générer le projet Xcode
+        run: cd ios && xcodegen generate
+      - name: Compiler pour le simulateur (sans signature)
+        run: |
+          cd ios
+          xcodebuild -project PrepConcoursBF.xcodeproj -scheme PrepConcoursBF \
+            -destination 'generic/platform=iOS Simulator' -configuration Debug build CODE_SIGNING_ALLOWED=NO
+  ipa:
+    if: ${{ github.event.inputs.signer == 'true' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install xcodegen
+      - name: Certificat et profil (secrets GitHub)
+        env:
+          CERT_P12_B64: ${{ secrets.IOS_CERT_P12_B64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROFILE_B64: ${{ secrets.IOS_PROFILE_B64 }}
+        run: |
+          KC=$RUNNER_TEMP/build.keychain
+          security create-keychain -p tmp "$KC"; security default-keychain -s "$KC"; security unlock-keychain -p tmp "$KC"
+          echo "$CERT_P12_B64" | base64 -d > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -k "$KC" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k tmp "$KC"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROFILE_B64" | base64 -d > ~/Library/MobileDevice/Provisioning\ Profiles/app.mobileprovision
+      - name: Archive + export IPA
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          cd ios && sed -i '' "s|# DEVELOPMENT_TEAM: \"XXXXXXXXXX\".*|DEVELOPMENT_TEAM: \"$TEAM_ID\"|" project.yml && xcodegen generate
+          xcodebuild -project PrepConcoursBF.xcodeproj -scheme PrepConcoursBF -configuration Release \
+            -archivePath $RUNNER_TEMP/app.xcarchive archive
+          printf '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>method</key><string>app-store-connect</string><key>teamID</key><string>%s</string></dict></plist>' "$TEAM_ID" > $RUNNER_TEMP/export.plist
+          xcodebuild -exportArchive -archivePath $RUNNER_TEMP/app.xcarchive -exportOptionsPlist $RUNNER_TEMP/export.plist -exportPath $RUNNER_TEMP/out
+      - uses: actions/upload-artifact@v4
+        with: { name: PrepConcoursBF-ios, path: "${{ runner.temp }}/out/*.ipa" }

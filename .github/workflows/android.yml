@@ -1,0 +1,38 @@
+name: Android (APK + AAB pour Google Play, API 36)
+on:
+  workflow_dispatch: {}
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: android-actions/setup-android@v3
+      - name: SDK Android 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.13' }
+      - name: Clé de signature (secrets GitHub)
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > prepconcours-release.jks
+            printf 'storeFile=prepconcours-release.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
+          else
+            echo "Aucune clé fournie : l'APK/AAB ne seront PAS signés (inutilisables sur le Play Store)."
+          fi
+      - name: Compiler APK + AAB
+        run: gradle assembleRelease bundleRelease -PagpVersion=8.13.0 -PcompileApi=36 -PtargetApi=36 -Dorg.gradle.jvmargs=-Xmx3g --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PrepConcoursBF-android
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab

@@ -1,0 +1,40 @@
+name: PrepConcoursBF
+options:
+  bundleIdPrefix: bf.prepconcours
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "4.6"
+    CURRENT_PROJECT_VERSION: "9"
+    # DEVELOPMENT_TEAM: "XXXXXXXXXX"   # <- décommente et mets ton Team ID Apple (developer.apple.com > Membership)
+targets:
+  PrepConcoursBF:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: ../app/src/main/assets/www     # même application web que sur Android (dossier « www » copié tel quel)
+        type: folder
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: bf.prepconcours.app
+        PRODUCT_NAME: PrepConcoursBF
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: "PREP' CONCOURS BF"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight, UIInterfaceOrientationPortraitUpsideDown]
+        ITSAppUsesNonExemptEncryption: false
+        LSApplicationQueriesSchemes: [whatsapp, tel, mailto]

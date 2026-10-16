@@ -1,0 +1,26 @@
+keystore.properties
+*.jks
+*.keystore
+local.properties
+.gradle/
+build/
+app/build/
+ios/PrepConcoursBF.xcodeproj/
+
+# Backend
+backend/.env
+backend/data/
+
+# --- ajouté : ne jamais envoyer sur GitHub ---
+.env
+backend/.env
+backend/data/
+*.db
+*.db-shm
+*.db-wal
+*.jks
+*.keystore
+keystore.properties
+*.bak
+*.patch
+node_modules/

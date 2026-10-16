@@ -1,0 +1,15 @@
+{
+  "name": "prepconcours-backend",
+  "version": "1.0.0",
+  "description": "Backend de PREP' CONCOURS BF : comptes, activation, assistant IA, inscriptions, annonces",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test --no-warnings test/*.test.js",
+    "backup": "node --no-warnings scripts/backup.js"
+  }
+}

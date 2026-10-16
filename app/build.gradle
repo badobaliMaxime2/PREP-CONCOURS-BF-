@@ -1,0 +1,41 @@
+plugins { id 'com.android.application' }
+
+def kf = rootProject.file('keystore.properties')
+def kp = new Properties()
+if (kf.exists()) kf.withInputStream { kp.load(it) }
+def compileApi = (project.findProperty('compileApi') ?: '34') as Integer
+def targetApi = (project.findProperty('targetApi') ?: '34') as Integer
+
+android {
+    namespace 'bf.prepconcours'
+    compileSdk compileApi
+    defaultConfig {
+        applicationId "bf.prepconcours"
+        minSdk 26
+        targetSdk targetApi
+        versionCode 9
+        versionName "4.6"
+    }
+    signingConfigs {
+        release {
+            if (kf.exists()) {
+                storeFile rootProject.file(kp['storeFile'])
+                storePassword kp['storePassword']
+                keyAlias kp['keyAlias']
+                keyPassword kp['keyPassword']
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (kf.exists()) signingConfig signingConfigs.release
+        }
+    }
+    bundle { language { enableSplit = false } }
+    lint { checkReleaseBuilds false; abortOnError false }   // pas de vérification lint (évite de télécharger des dizaines de fichiers)
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

@@ -1,0 +1,24 @@
+# Serveur loué (VPS) : docker compose up -d --build   (voir DEPLOY.md). Caddy obtient et renouvelle le HTTPS tout seul.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "3000"
+      DB_FILE: /data/prepconcours.db
+      TRUST_PROXY: "1"
+    volumes:
+      - data:/data
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy:/data
+volumes:
+  data:
+  caddy:

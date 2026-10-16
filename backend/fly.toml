@@ -1,0 +1,25 @@
+# Déploiement Fly.io : voir DEPLOY.md. Remplace le nom de l'application (il doit être unique sur Fly.io).
+app = "prepconcours-bf"
+primary_region = "cdg"          # Paris : la région la plus proche de l'Afrique de l'Ouest
+
+[build]
+
+[env]
+  PORT = "3000"
+  DB_FILE = "/data/prepconcours.db"
+  TRUST_PROXY = "1"
+
+[[mounts]]
+  source = "data"               # volume persistant (SQLite)
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "off"    # SQLite = UNE seule machine, toujours allumée
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
