@@ -151,7 +151,7 @@ async function cloudRun(manual){
     if(r&&r.ok&&lver!==v0){cloudSoon();return false}   // données modifiées pendant l'échange : on ignore cette réponse et on resynchronise
     if(r&&r.ok&&r.data){const d=r.data,set=rawSet||ls.s;
       set("hist",d.hist);set("cq",d.cq);set("cqAt",d.cqAt);set("target",d.target);set("targetAt",d.targetAt);
-      if(JSON.stringify(cloudData())!==before&&A.cur()!=="quizrun"&&A.cur()!=="exam")A.draw();
+      if(JSON.stringify(cloudData())!==before&&A.cur()!=="quizrun")A.draw();
       if(manual)toast("Progression synchronisée ✔");return true}
     if(r&&r.error==="auth"){sessionExpired();return false}
     if(manual)toast(ERR[r&&r.error]||ERR.srv);return false}
@@ -168,14 +168,15 @@ async function adm(path){
   if(r.status===401)throw fail("unauth");
   try{j=await r.json()}catch(e){throw fail("bad")}
   return j}
+let gateMode="login";
 function gate(){
   const adm=A.cur()==="admin";
   if(!C.REQUIRE_ACCOUNT||acctOK()||adm){document.body.classList.remove("gate");return false}
   document.body.classList.add("gate");
-  const a=acct(),scr=(a&&a.pending&&!a.act)?"activate":"signup";
+  const a=acct(),scr=(a&&a.pending&&!a.act)?"activate":gateMode;
   $("#view").innerHTML=A.S[scr]();$("#view").scrollTop=0;
-  $("#title").textContent=scr==="signup"?"Créer mon compte":"Activer mon compte";$("#backBtn").hidden=true;return true}
-const waMsg=a=>"Bonjour, je souhaite activer mon compte PREP' CONCOURS BF.\nNom : "+a.nom+"\nPrénom : "+a.prenom+"\nNé(e) le : "+a.naissance+"\nContact : "+shown(a)+"\nIdentifiant appareil : "+a.did;
+  $("#title").textContent=scr==="signup"?"Créer mon compte":scr==="login"?"Connexion":"Activer mon compte";$("#backBtn").hidden=true;return true}
+const waMsg=a=>"Bonjour, je souhaite activer mon compte PREP' CONCOURS BF.\nNom : "+a.nom+"\nPrénom : "+a.prenom+"\nContact : "+shown(a)+"\nIdentifiant appareil : "+a.did;
 
 /* ---------- assistant ---------- */
 const REFUSE="Je ne suis pas programmé pour répondre à ce type de question. Je peux t'aider pour ta préparation aux concours : cours, quiz, annales et méthodes de révision.";
@@ -297,7 +298,7 @@ function screens(S,T){
   const R=()=>REPD();
   const old={home:S.home,learn:S.learn,more:S.more,about:S.about};
   const repBtn=`<button class="mod" data-act="go" data-a="rep"><span class="ic">🇧🇫</span><span><b>Repères du Burkina Faso</b><small>Histoire 1960-2026, institutions, Charte de la Révolution, AES, gouvernement</small></span></button>`;
-  const pdfBtn=`<button class="mod" data-act="go" data-a="pdf"><span class="ic">📕</span><span><b>Bibliothèque PDF</b><small>Annales, cours et documents à lire ou télécharger</small></span></button>`;
+  const pdfBtn=`<button class="mod" data-act="go" data-a="pdf"><span class="ic">📕</span><span><b>Bibliothèque PDF</b><small>Annales, cours et documents à lire dans l'application</small></span></button>`;
   const exBtn=`<button class="mod" data-act="go" data-a="exams"><span class="ic">📝</span><span><b>Examens</b><small>Compose une épreuve et envoie ta copie au jury</small></span></button>`;
   const botBtn=`<button class="mod" data-act="go" data-a="bot"><span class="ic">🤖</span><span><b>Assistant PREP'</b><small>Pose tes questions sur les cours et l'application</small></span></button>`;
   S.home=()=>old.home()+`<h3 class="sec">À découvrir</h3>`+repBtn+pdfBtn+exBtn+botBtn;
@@ -311,15 +312,36 @@ function screens(S,T){
   const pdfAll=()=>(window.PDFS||[]).map((x,i)=>Object.assign({i},x));
   const pdfList=(q,cat)=>{q=(q||"").toLowerCase();
     const l=pdfAll().filter(x=>(!cat||x.cat===cat)&&(!q||((x.t||"")+" "+(x.cat||"")+" "+(x.d||"")).toLowerCase().includes(q)));
-    return l.length?l.map(x=>`<button class="mod" data-act="pdf" data-a="${x.i}"><span class="ic">📕</span><span><b>${esc(x.t||"Document")}</b><small>${esc([x.cat,x.d].filter(Boolean).join(" · "))}${x.f?" · 📥 disponible hors ligne":" · 🌐 en ligne"}</small></span></button>`).join(""):`<div class="note">Aucun document trouvé.</div>`};
+    return l.length?l.map(x=>`<button class="mod" data-act="pdf" data-a="${x.i}"><span class="ic">📕</span><span><b>${esc(x.t||"Document")}</b><small>${esc([x.cat,x.d].filter(Boolean).join(" · "))}${x.n?" · 📖 lecture dans l'application":" · 🌐 en ligne"}</small></span></button>`).join(""):`<div class="note">Aucun document trouvé.</div>`};
   S.pdf=()=>{const all=pdfAll();if(!all.length)return`<div class="note">📕 La bibliothèque est vide pour le moment. Les PDF (annales, cours, textes officiels) seront ajoutés ici.</div>`;
     const cats=[...new Set(all.map(x=>x.cat).filter(Boolean))];
     return`<input id="pq" type="search" placeholder="🔎 Rechercher un document…" autocomplete="off">`+(cats.length?`<div class="row" style="gap:6px;flex-wrap:wrap;margin:8px 0"><button class="chip green" data-act="pdfcat" data-a="">Tous</button>${cats.map(c=>`<button class="chip grey" data-act="pdfcat" data-a="${esc(c)}">${esc(c)}</button>`).join("")}</div>`:"")+`<div id="pl">${pdfList("","")}</div>`};
   let pdfCat="";
   document.addEventListener("input",e=>{if(e.target.id==="pq"){const l=document.getElementById("pl");if(l)l.innerHTML=pdfList(e.target.value,pdfCat)}});
-  EXT_PDF.open=i=>{const x=(window.PDFS||[])[+i];if(!x)return;const B=window.Android;
-    if(x.f){if(B&&B.openPdf){const r=B.openPdf(x.f);if(r==="missing")A.toast("Fichier introuvable dans l'application");else if(r==="noapp")A.toast("Installe une application de lecture PDF (ex. Google Drive PDF Viewer)")}else window.open("pdf/"+encodeURIComponent(x.f),"_blank")}
-    else if(x.u){if(B&&B.open)B.open(x.u);else window.open(x.u,"_blank")}};
+  EXT_PDF.open=i=>{const x=(window.PDFS||[])[+i];if(!x)return;
+    if(!prem()&&!C.ALL_FREE){A.toast("Bibliothèque PDF réservée aux abonnés");return A.go("premium")}
+    if(x.n&&x.f){A.go("pdfview",String(i));return}
+    if(x.u){const B=window.Android;if(B&&B.open)B.open(x.u);else window.open(x.u,"_blank")}};
+  T.pdfview="Lecture";
+  S.pdfview=i=>{const x=(window.PDFS||[])[+i];if(!x||!x.n)return"";const d=x.f.replace(/\.pdf$/,""),ac=acct()||{},w=esc(shown({...ac,t:ac.type})||"PREP CONCOURS");
+    let h=`<div class="pvwm">${Array(24).fill("<span>"+w+"</span>").join("")}</div><div class="note">📖 ${esc(x.t)} — lecture seule dans l'application (téléchargement impossible).</div><div class="pv">`;
+    for(let p=1;p<=x.n;p++)h+=`<img src="pdfimg/${d}/${String(p).padStart(3,"0")}.webp" loading="lazy" draggable="false" alt="Page ${p}" oncontextmenu="return false">`;
+    return h+"</div>"};
+  let planSel="month";
+  S.premium=()=>{if(C.ALL_FREE)return`<div class="card stat"><b>🎉</b><h3>Tout est gratuit</h3></div>`;
+    const st=subState(),P=C.PLANS,ok=["admin","life","month"].includes(st.k),sel=planSel;
+    const state=ok?`<div class="card stat"><b>⭐</b><h3>${st.k==="life"?"Abonnement à vie actif":st.k==="admin"?"Accès administrateur":"Abonnement actif jusqu'au "+fdate(st.until)}</h3><p>Toutes les rubriques sont débloquées.</p></div>`:
+      st.k==="trial"?`<div class="card" style="background:#e6f6ec">🎁 <b>Essai gratuit</b> : il te reste ${Math.max(1,Math.ceil((st.until-subNow())/36e5))} h. Abonne-toi pour garder l'accès à toutes les rubriques.</div>`:
+      `<div class="card" style="background:#fdecea">🔒 <b>Essai gratuit terminé.</b> Abonne-toi pour retrouver toutes les rubriques.</div>`;
+    return state+`<div class="hero" style="background:linear-gradient(135deg,#b8860b,#e0a800)"><h2>⭐ Abonnement</h2><p>Toutes les matières, tests chronométrés, audio, PDF et tableau de bord.</p></div>
+    <div class="card"><b>Étape 1 — Choisis ton abonnement</b>
+     <button class="opt ${sel==="month"?"sel":""}" data-act="plan" data-a="month">📅 Mensuel — ${P.month.prix} F (30 jours)</button>
+     <button class="opt ${sel==="life"?"sel":""}" data-act="plan" data-a="life">♾️ À vie — ${P.life.prix} F (paiement unique)</button></div>
+    <div class="card"><b>Étape 2 — Payer</b><p style="margin:6px 0">Compose ce code, puis saisis le montant <b>${P[sel].prix}</b> :<br><b>${esc(C.USSD)}</b></p>
+     <button class="btn" data-act="open" data-a="tel:${C.USSD.replace(/#/g,"%23")}">📲 Payer maintenant</button></div>
+    <div class="card"><b>Étape 3 — Confirmer</b><p style="margin:6px 0">Envoie la référence de la transaction : ton abonnement est activé dès vérification.</p>
+     <button class="btn alt" data-act="proof">💬 J'ai payé : envoyer la preuve</button>
+     <button class="btn" data-act="subcheck">🔄 Vérifier mon abonnement</button></div>`};
   EXT_PDF.cat=c=>{pdfCat=c;const q=document.getElementById("pq"),l=document.getElementById("pl");if(l)l.innerHTML=pdfList(q?q.value:"",c);
     document.querySelectorAll('[data-act="pdfcat"]').forEach(b=>{b.classList.toggle("green",b.dataset.a===c);b.classList.toggle("grey",b.dataset.a!==c)})};
   S.rep=()=>`<div class="note">Contenu pédagogique mis à jour le ${esc(R().maj)}. Pour tout texte officiel, réfère-toi aux publications de la Présidence du Faso et au Journal officiel.</div>`+
@@ -345,12 +367,18 @@ function screens(S,T){
     <div class="row" style="gap:6px"><button class="chip grey" data-act="botclear">Effacer</button><span><button class="chip green" data-act="open" data-a="mailto:${esc(C.EMAIL)}">Gmail</button> <button class="chip green" data-act="open" data-a="https://wa.me/${esc(C.WHATSAPP)}">WhatsApp</button></span></div>`};
 
   /* Compte */
-  S.signup=()=>`<div class="hero"><h2>Bienvenue 👋</h2><p>Crée ton compte PREP' CONCOURS BF pour accéder à l'application.</p></div>
+  S.login=()=>`<div class="hero"><h2>Connexion 🔑</h2><p>Retrouve ton compte PREP' CONCOURS BF, même après une réinstallation.</p></div>
    <div class="card"><b>👤 Mes informations</b><input id="sn" placeholder="Nom *" autocomplete="family-name"><input id="sp" placeholder="Prénom(s) *" autocomplete="given-name">
-   <small>Date de naissance *</small><input id="sb" type="date">
+   <input id="sc" placeholder="Numéro (ex : 70 00 00 00) ou Gmail *" autocomplete="username" autocapitalize="none">
+   <small>Un code te sera envoyé sur ce numéro ou ce Gmail. Ta progression sera retrouvée.</small>
+   <button class="btn" data-act="signup">Se connecter</button></div>
+   <button class="btn alt" data-act="gomode" data-a="signup">Pas encore de compte ? Créer un compte</button>`;
+  S.signup=()=>`<div class="hero"><h2>Bienvenue 👋</h2><p>Crée ton compte PREP' CONCOURS BF : 48 h d'essai gratuit, puis abonnement.</p></div>
+   <div class="card"><b>👤 Mes informations</b><input id="sn" placeholder="Nom *" autocomplete="family-name"><input id="sp" placeholder="Prénom(s) *" autocomplete="given-name">
    <input id="sc" placeholder="Numéro (ex : 70 00 00 00) ou Gmail *" autocomplete="username" autocapitalize="none">
    <small>Tu recevras un code d'activation sur le numéro ou le Gmail renseigné.</small>
-   <button class="btn" data-act="signup">Créer mon compte</button></div>`;
+   <button class="btn" data-act="signup">Créer mon compte</button></div>
+   <button class="btn alt" data-act="gomode" data-a="login">J'ai déjà un compte : me connecter</button>`;
   S.activate=()=>{const a=acct();if(!a)return S.signup();
     const email=a.type==="email",srv=a.mode==="server"&&a.sent!=="failed";
     const how=email&&srv?`Un code d'activation à 6 chiffres vient d'être envoyé à <b>${esc(a.contact)}</b>. Pense à vérifier les courriers indésirables.`
@@ -363,7 +391,8 @@ function screens(S,T){
     ${!srv&&C.ACCOUNT_URL?`<button class="btn alt" data-act="resend">📨 Réessayer l'envoi du code par le serveur</button>`:""}
     <button class="btn alt" data-act="editacct">✏️ Modifier mes informations</button>`};
   S.compte=()=>{const a=acct();if(!a)return`<div class="card">Aucun compte sur cet appareil.</div>`;
-    return`<div class="card stat"><b>👤</b><h3>${esc(a.prenom)} ${esc(a.nom)}</h3><small>${esc(shown({...a,t:a.type}))} · né(e) le ${esc(a.naissance)}</small><br><span class="chip ${a.act?"green":"grey"}">${a.act?"Compte activé":"Non activé"}</span></div>
+    return`<div class="card stat"><b>👤</b><h3>${esc(a.prenom)} ${esc(a.nom)}</h3><small>${esc(shown({...a,t:a.type}))}</small><br><span class="chip ${a.act?"green":"grey"}">${a.act?"Compte activé":"Non activé"}</span></div>
+    ${subCard()}
     <button class="btn alt" data-act="logout">${outConfirm?"⚠️ Confirmer la déconnexion":"Se déconnecter"}</button>
     <button class="btn alt" data-act="cloudsync">☁️ Synchroniser ma progression</button>
     <div class="note">Ta progression (résultats, objectif, questions ajoutées) est sauvegardée sur ton compte et retrouvée sur tout nouvel appareil après activation. La déconnexion l'efface de cet appareil : un nouveau code sera nécessaire.</div>
@@ -401,26 +430,69 @@ function screens(S,T){
   S.admin=()=>`<div class="card"><b>🔐 Accès administrateur</b><small style="display:block">Jeton administrateur du serveur (ADMIN_TOKEN). Il n'est jamais enregistré dans l'application.</small><input id="apin" type="password" placeholder="Jeton administrateur" autocomplete="off" autocapitalize="none"></div>
    <div class="card"><b>🔑 Codes d'activation en attente</b><small style="display:block">Comptes créés avec un numéro de téléphone : envoie-leur le code par WhatsApp ou SMS.</small><button class="btn" data-act="pending">Afficher les codes en attente</button><div id="agout"></div></div>
    <div class="card"><b>🎟️ Codes d'activation (usage unique)</b><small style="display:block">Suivi des codes donnés : libres ou utilisés, et par qui.</small><button class="btn" data-act="codes">Voir l'état des codes</button><div id="cout"></div></div>
-   <div class="card"><b>⭐ Code Premium</b><input id="aid" placeholder="Identifiant de l'appareil du client" autocapitalize="characters"><button class="btn" data-act="gen">Générer le code</button><div id="aout"></div></div>
+   <div class="card"><b>⭐ Abonnement client</b><small style="display:block">Après avoir vérifié le paiement, active l'abonnement du client (numéro ou Gmail de son compte).</small><input id="gc" placeholder="Numéro ou Gmail du client" autocapitalize="none"><select id="gp"><option value="month">Mensuel (+30 jours)</option><option value="life">À vie</option><option value="revoke">Retirer l'abonnement</option></select><button class="btn" data-act="grant">Valider</button><div id="gout"></div></div>
    <div class="card"><b>📊 Serveur</b><button class="btn" data-act="stats">Statistiques</button><button class="btn alt" data-act="pingsrv">Tester la connexion au serveur</button><div id="sout"></div></div>
    <div class="card"><b>⚙️ Liens en ligne (remplacent data.js)</b>${[["CONFIG_URL","Source de configuration (JSON)"],["FEED_URL","Annonces officielles (JSON)"],["ACCOUNT_URL","Serveur de comptes et d'assistant IA"],["AI_URL","Serveur de l'assistant IA (si différent)"],["REGISTER_URL","Inscriptions aux concours"]].map(x=>`<small>${x[1]}</small><input id="o_${x[0]}" value="${esc((ls.g("ovr",{})[x[0]])||"")}" placeholder="https://… (vide = valeur de data.js)" autocapitalize="none">`).join("")}
    <button class="btn" data-act="saveovr">Enregistrer</button></div>`;
 }
 
 /* ---------- actions ---------- */
+
+/* ---------- abonnement : essai gratuit, mensuel, à vie (état vérifié par le serveur) ---------- */
+const subGet=()=>ls.g("sub",null);
+const subNow=()=>{const s=subGet()||{};return Math.max(Date.now()+(s.off||0),s.seen||0)};
+function subState(){
+  const a=acct();if(!a||!a.act)return{k:"none"};
+  if(a.acode&&adminLocal(a.acode))return{k:"admin"};
+  const s=subGet(),t=subNow();
+  if(s&&s.plan==="life")return{k:"life"};
+  if(s&&s.plan==="month"&&s.exp>t)return{k:"month",until:s.exp};
+  if(s&&s.srv){if(s.trialEnd&&s.trialEnd>t)return{k:"trial",until:s.trialEnd};return{k:"expired"}}
+  if(!a.actAt){a.actAt=Date.now();ls.s("acct",a)}   // serveur pas encore joint : essai local provisoire
+  const e=a.actAt+(C.TRIAL_HOURS||48)*36e5;return e>Date.now()?{k:"trial",until:e}:{k:"expired"}}
+const prem=()=>["admin","life","month","trial"].includes(subState().k);
+let subBusy=false;
+async function subSync(manual){
+  const a=acct();if(!a||!a.act||!C.ACCOUNT_URL||subBusy)return false;
+  if(!navigator.onLine){if(manual)toast("Hors ligne : vérification impossible");return false}
+  subBusy=true;const before=subState().k;
+  try{const r=await post({action:"substatus",contact:a.contact,did:a.did});
+    if(r&&r.ok&&r.now){ls.s("sub",{srv:true,off:r.now-Date.now(),seen:Math.max(r.now,(subGet()||{}).seen||0),plan:r.plan||"",exp:r.expires||0,trialEnd:r.trial_end||0});
+      const k=subState().k;if(k!==before&&A.cur()!=="quizrun")A.draw();
+      if(manual)toast(k==="month"||k==="life"?"Abonnement actif ✔":k==="trial"?"Essai gratuit en cours":"Paiement pas encore enregistré : réessaie dans quelques minutes");return true}
+    if(manual)toast("Vérification impossible pour le moment")}
+  catch(e){if(manual)toast(errMsg(e))}finally{subBusy=false}return false}
+const fdate=t=>new Date(t).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"});
+function banner(){const st=subState(),gp=`<button class="mod" style="background:#fff8e1;border-left-color:var(--y)" data-act="go" data-a="premium"><span class="ic">⭐</span><span><b>S'abonner — 1500 F/mois ou 3000 F à vie</b><small>Toutes les matières, tests chronométrés, audio, PDF…</small></span></button>`;
+  if(C.ALL_FREE)return`<div class="card" style="background:#e6f6ec">🎉 <b>Tout est gratuit</b></div>`;
+  if(st.k==="admin")return`<div class="card" style="background:#fff8e1">🛡️ <b>Accès administrateur</b></div>`;
+  if(st.k==="life")return`<div class="card" style="background:#fff8e1">⭐ <b>Abonnement à vie actif</b></div>`;
+  if(st.k==="month")return`<div class="card" style="background:#fff8e1">⭐ <b>Abonnement actif</b> jusqu'au ${fdate(st.until)}</div>`;
+  if(st.k==="trial"){const h=Math.max(1,Math.ceil((st.until-subNow())/36e5));return`<div class="card" style="background:#e6f6ec">🎁 <b>Essai gratuit</b> : il te reste ${h} h</div>`+gp}
+  return gp}
+function subCard(){const st=subState();const t={admin:"🛡️ Administrateur",life:"⭐ Abonnement à vie",month:"⭐ Abonné jusqu'au "+(st.until?fdate(st.until):""),trial:"🎁 Essai gratuit en cours",expired:"🔒 Essai terminé : abonne-toi",none:""}[st.k]||"";
+  return t?`<div class="card"><b>${t}</b><button class="btn alt" data-act="go" data-a="premium">Gérer mon abonnement</button></div>`:""}
 const EXT_PDF={};
 async function act(a0,a,t){
   switch(a0){
   case"afilt":afilt=a==="1";A.draw();return;
+  case"plan":planSel=a==="life"?"life":"month";A.draw();return;
+  case"subcheck":await subSync(true);A.draw();return;
+  case"proof":{const ac=acct()||{},P=C.PLANS[planSel],u=`https://wa.me/${C.WHATSAPP}?text=${encodeURIComponent("Bonjour, j'ai payé "+P.prix+" F pour l'abonnement "+P.nom+" PREP' CONCOURS BF.\nMon compte : "+shown({...ac,t:ac.type})+"\nRéférence de la transaction : ")}`,B=window.Android;if(B&&B.open)B.open(u);else window.open(u,"_blank");return}
+  case"grant":{const c=normContact(($("#gc").value||"").trim()),tok=(($("#apin")||{}).value||"").trim();
+    if(!c)return toast("Entre un numéro à 8 chiffres ou une adresse e-mail valide");if(!tok)return toast(ERR.notok);if(!C.ACCOUNT_URL)return toast(ERR.nourl);
+    try{const r=await fetch(admBase()+"/admin/subs",{method:"POST",headers:{Authorization:"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({contact:c.v,plan:$("#gp").value})});
+      if(r.status===401)return toast(ERR.unauth);const j=await r.json();
+      $("#gout").innerHTML=j&&j.ok?`<div class="note">✔ ${esc(c.v)} : ${j.plan==="life"?"à vie":j.plan==="month"?"mensuel jusqu'au "+fdate(j.expires):"aucun abonnement"}</div>`:`<div class="note">Échec : vérifie le jeton et le contact</div>`}catch(err){toast(ERR.net)}return}
   case"botsend":botSend();return;
   case"pdf":EXT_PDF.open(a);return;
   case"pdfcat":EXT_PDF.cat(a);return;
+  case"gomode":gateMode=a==="signup"?"signup":"login";A.draw();return;
   case"botclear":chat=[];ls.s("chat",[]);A.draw();return;
   case"signup":{const g=id=>($("#"+id).value||"").trim();
-    const nom=g("sn"),prenom=g("sp"),nai=g("sb"),c=normContact(g("sc"));
-    if(!nom||!prenom||!nai)return toast("Remplis nom, prénom et date de naissance");
+    const nom=g("sn"),prenom=g("sp"),nai="2000-01-01",c=normContact(g("sc"));
+    if(!nom||!prenom)return toast("Remplis ton nom et ton prénom");
     if(!c)return toast("Entre un numéro à 8 chiffres ou une adresse e-mail valide");
-    const y=new Date(nai).getFullYear();if(!(y>1940&&y<=new Date().getFullYear()-8))return toast("Date de naissance invalide");
     const a2={nom:nom.toUpperCase(),prenom,naissance:nai,contact:c.v,type:c.t,date:Date.now(),act:false,pending:true,mode:C.ACCOUNT_URL?"server":"manual",did:A.did()};
     let note="";
     if(C.ACCOUNT_URL){t.disabled=true;
@@ -446,8 +518,8 @@ async function act(a0,a,t){
     if(C.ACCOUNT_URL){try{r=await post({action:"verify",contact:a2.contact,code,did:a2.did,type:a2.type,nom:a2.nom,prenom:a2.prenom,naissance:a2.naissance})}catch(e){err=e}}
     if(r&&r.error==="used")return toast("Ce code d'activation a déjà été utilisé par une autre personne. Demande un autre code à l'administrateur.");
     const local=master||(single&&(!C.ACCOUNT_URL||!!err||(r&&!r.ok&&!["rate","locked","expired"].includes(r.error))));   // serveur injoignable ou sans cette liste : on accepte sur le téléphone
-    if((r&&r.ok&&r.token)||local){a2.act=true;a2.pending=false;if(r&&r.token)a2.token=r.token;if(master||single)a2.acode=code;
-      ls.s("acct",a2);ls.s("alock",{n:0,t:0});toast("Compte activé ✔");A.reset();cloud(false);return}
+    if((r&&r.ok&&r.token)||local){a2.act=true;a2.pending=false;a2.actAt=a2.actAt||Date.now();if(r&&r.token)a2.token=r.token;if(master||single)a2.acode=code;
+      ls.s("acct",a2);ls.s("alock",{n:0,t:0});toast("Compte activé ✔");A.reset();cloud(false);subSync(false);return}
     if(err)return toast(errMsg(err));
     if(r&&(r.error==="locked"||r.error==="expired"||r.error==="rate"))return toast(ERR[r.error]);
     lk.n++;if(lk.n>=5){lk.t=Date.now()+300000;lk.n=0}ls.s("alock",lk);toast("Code incorrect");return}
@@ -499,5 +571,5 @@ function init(APP){A=APP;C=APP.C;D=APP.D;ls=APP.ls;esc=APP.esc;toast=APP.toast;
   document.addEventListener("keydown",e=>{if(e.target&&e.target.id==="bi"&&e.key==="Enter"){e.preventDefault();botSend()}});
 }
 function after(cur){if(window.EXAM)EXAM.after(cur);const f=$("#botFab");if(f)f.style.display=(cur==="bot"||document.body.classList.contains("gate"))?"none":"flex"}
-window.EXT={init,gate,act,sync:async m=>{await sync(m);await cloud(false)},after};
+window.EXT={init,gate,act,sync:async m=>{await sync(m);await cloud(false);await subSync(false)},after,prem,banner};
 })();

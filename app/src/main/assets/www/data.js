@@ -23,7 +23,7 @@ window.CONFIG = {
   /* ----- COMPTE UTILISATEUR ----- */
   // Empreintes (SHA-256) des codes administrateur : un code administrateur active n'importe quel compte, même sans serveur.
   // Les codes eux-mêmes ne sont PAS dans l'application. Pour en créer : « node backend/scripts/admin-code.js 2 » puis coller la ligne ADMIN_HASHES ici.
-  ADMIN_HASHES: ["091bb73d24fd5439e401e12068a82ba8733b5ac3726035718ce09f30b86b8d9c", "b5df7e936dbe180d58115ed30f0450d56af0becccfcac4ac1b8292a877f0a813"],
+  ADMIN_HASHES: ["2a4ea3770476de0b86fe7bd0b291a8348bd41c701b8c49c8644cc3064568d0e4"],
   ADMIN_EMAILS: ["badobalimaxime@gmail.com","balimaximebado592@gmail.com"],   // adresses qui reçoivent les demandes d'activation (les codes administrateur sont définis sur le serveur : ADMIN_CODES)
   REQUIRE_ACCOUNT: true,        // true = compte + code d'activation obligatoires pour utiliser l'application
   ACCOUNT_URL: "https://recreation-landscapes-seafood-baptist.trycloudflare.com",              // script (Google Apps Script, voir README) qui envoie le code par e-mail et le vérifie
@@ -35,9 +35,11 @@ window.CONFIG = {
   EMAIL: "badobalimaxime@gmail.com",      // Gmail du support
 
   /* ----- PREMIUM ----- */
-  PRICE: "3000 F CFA",
-  USSD: "*144*10*56837328*3000#",          // numéro à composer pour payer
-  ALL_FREE: true,                          // true = TOUT est gratuit (matières, tests chronométrés, audio, tableau de bord). Mettre false pour réactiver le Premium
+  PRICE: "1500 F/mois ou 3000 F à vie",
+  USSD: "*144*10*56837328#",              // code à composer pour payer (puis saisir le montant)
+  PLANS: { month: { nom: "Mensuel", prix: 1500, jours: 30 }, life: { nom: "À vie", prix: 3000 } },
+  TRIAL_HOURS: 48,                         // essai gratuit offert à chaque nouvel utilisateur
+  ALL_FREE: false,                          // true = TOUT est gratuit (matières, tests chronométrés, audio, tableau de bord). Mettre false pour réactiver le Premium
   FREE_MATIERES: ["cg","fr"],              // utilisé seulement si ALL_FREE est false : matières gratuites
 
   /* ----- INSCRIPTIONS EN LIGNE ----- */

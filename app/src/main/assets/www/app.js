@@ -15,7 +15,7 @@ function did(){let d=(B&&B.deviceId&&B.deviceId())||ls.g("did","");if(!d){d=Arra
 function h53(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const c=str.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)}
 const cleanCode=x=>String(x||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
-const isPrem=()=>{if(C.ALL_FREE)return true;const p=ls.g("prem",null);return !!(p&&typeof p==="object"&&p.code&&p.did===did())};
+const isPrem=()=>!!C.ALL_FREE||!!(window.EXT&&EXT.prem&&EXT.prem());
 const locked=m=>!isPrem()&&!(C.FREE_MATIERES||[]).includes(m);
 const lk=m=>locked(m)?"🔒 ":"";
 const cq=()=>ls.g("cq",[]);
@@ -36,7 +36,7 @@ const open=u=>{if(B&&B.open)B.open(u);else window.open(u,"_blank")};
 const S={
 home(){const st=stats(),nx=nextC();
  return`<div class="hero"><h2>Bienvenue 👋</h2><p>Prépare ton concours, un jour à la fois.</p></div>
- ${C.ALL_FREE?`<div class="card" style="background:#e6f6ec">🎉 <b>Tout est gratuit</b> — toutes les matières et fonctions sont débloquées.</div>`:isPrem()?`<div class="card" style="background:#fff8e1">⭐ <b>Premium actif</b> — tout est débloqué.</div>`:`<button class="mod" style="background:#fff8e1;border-left-color:var(--y)" data-act="go" data-a="premium"><span class="ic">⭐</span><span><b>Passer en Premium — ${esc(C.PRICE)}</b><small>Débloque toutes les matières, les tests chronométrés, l'audio…</small></span></button>`}
+ ${window.EXT&&EXT.banner?EXT.banner():""}
  <div class="grid2"><div class="card stat"><b>${st.n}</b><small>Quiz réalisés</small></div><div class="card stat"><b>${st.avg}%</b><small>Moyenne</small></div></div>
  ${nx?`<div class="card" style="margin-top:12px"><small>Prochain concours</small><h3 style="margin:4px 0">${esc(nx.nom)}</h3><span class="chip ${status(nx)[1]}">${dtxt(nx)}</span></div>`:""}
  <h3 class="sec">Accès rapide</h3>
