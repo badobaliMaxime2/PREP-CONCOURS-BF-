@@ -22,6 +22,12 @@ const cfg = {
   smsSid: env.SMS_SID,
   smsToken: env.SMS_TOKEN,
   smsFrom: env.SMS_FROM,
+  // MSY PAY Développeurs (encaissement par MONDIASYSTEM) : les deux secrets viennent de mondiasystem.com/store-publier
+  msyPayKey: env.MSY_PAY_API_KEY || "",
+  msyPayWebhookSecret: env.MSY_PAY_WEBHOOK_SECRET || "",
+  msyPayReturnUrl: env.MSY_PAY_RETURN_URL || "",
+  prixMois: Number(env.PRIX_MOIS || 1500),
+  prixVie: Number(env.PRIX_VIE || 3000),
 };
 if (cfg.serverSecret.length < 16 || cfg.adminToken.length < 16) { console.error("SERVER_SECRET et ADMIN_TOKEN doivent faire au moins 16 caractères."); process.exit(1); }
 

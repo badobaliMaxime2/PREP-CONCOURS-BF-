@@ -337,11 +337,13 @@ function screens(S,T){
     <div class="card"><b>Étape 1 — Choisis ton abonnement</b>
      <button class="opt ${sel==="month"?"sel":""}" data-act="plan" data-a="month">📅 Mensuel — ${P.month.prix} F (30 jours)</button>
      <button class="opt ${sel==="life"?"sel":""}" data-act="plan" data-a="life">♾️ À vie — ${P.life.prix} F (paiement unique)</button></div>
-    <div class="card"><b>Étape 2 — Payer</b><p style="margin:6px 0">Compose ce code, puis saisis le montant <b>${P[sel].prix}</b> :<br><b>${esc(C.USSD)}</b></p>
-     <button class="btn" data-act="open" data-a="tel:${C.USSD.replace(/#/g,"%23")}">📲 Payer maintenant</button></div>
-    <div class="card"><b>Étape 3 — Confirmer</b><p style="margin:6px 0">Envoie la référence de la transaction : ton abonnement est activé dès vérification.</p>
-     <button class="btn alt" data-act="proof">💬 J'ai payé : envoyer la preuve</button>
-     <button class="btn" data-act="subcheck">🔄 Vérifier mon abonnement</button></div>`};
+    <div class="card"><b>Étape 2 — Payer ${P[sel].prix} F par Mobile Money</b><p style="margin:6px 0">Orange Money, Moov Money, Wave… Le paiement est sécurisé par MSY PAY (MONDIASYSTEM) : ton abonnement s'active tout seul dès que le paiement est confirmé.</p>
+     <button class="btn" data-act="msypay">💳 Payer ${P[sel].prix} F</button></div>
+    <div class="card"><b>Étape 3 — Vérifier</b><p style="margin:6px 0">Après le paiement, reviens ici et touche « Vérifier ».</p>
+     <button class="btn" data-act="subcheck">🔄 Vérifier mon abonnement</button></div>
+    <details class="card"><summary>Autre moyen : paiement manuel</summary><p style="margin:6px 0">Compose ce code, puis saisis le montant <b>${P[sel].prix}</b> :<br><b>${esc(C.USSD)}</b></p>
+     <button class="btn alt" data-act="open" data-a="tel:${C.USSD.replace(/#/g,"%23")}">📲 Payer par code</button>
+     <button class="btn alt" data-act="proof">💬 J'ai payé : envoyer la preuve</button></details>`};
   EXT_PDF.cat=c=>{pdfCat=c;const q=document.getElementById("pq"),l=document.getElementById("pl");if(l)l.innerHTML=pdfList(q?q.value:"",c);
     document.querySelectorAll('[data-act="pdfcat"]').forEach(b=>{b.classList.toggle("green",b.dataset.a===c);b.classList.toggle("grey",b.dataset.a!==c)})};
   S.rep=()=>`<div class="note">Contenu pédagogique mis à jour le ${esc(R().maj)}. Pour tout texte officiel, réfère-toi aux publications de la Présidence du Faso et au Journal officiel.</div>`+
@@ -477,7 +479,15 @@ async function act(a0,a,t){
   switch(a0){
   case"afilt":afilt=a==="1";A.draw();return;
   case"plan":planSel=a==="life"?"life":"month";A.draw();return;
-  case"subcheck":await subSync(true);A.draw();return;
+  case"msypay":{const ac=acct();if(!ac||!ac.act){toast("Connecte-toi d'abord à ton compte");return A.go("compte")}
+    if(!navigator.onLine)return toast("Hors ligne : connecte-toi à Internet pour payer");
+    try{const r=await post({action:"paystart",contact:ac.contact,did:A.did(),plan:planSel});
+      if(r&&r.ok&&r.url){ls.s("payref",r.ref);const B=window.Android;if(B&&B.open)B.open(r.url);else window.open(r.url,"_blank");toast("Paie sur la page MSY PAY, puis reviens toucher « Vérifier »")}
+      else toast(r&&r.error==="indisponible"?"Paiement en ligne bientôt disponible : utilise le paiement manuel":"Paiement impossible pour le moment : réessaie")}
+    catch(e){toast(errMsg(e))}return}
+  case"subcheck":{const ref=ls.g("payref",null);
+    if(ref&&navigator.onLine){try{const r=await post({action:"paycheck",ref});if(r&&r.ok&&r.status!=="PENDING_PAYMENT")ls.s("payref",null)}catch(e){}}
+    await subSync(true);A.draw();return}
   case"proof":{const ac=acct()||{},P=C.PLANS[planSel],u=`https://wa.me/${C.WHATSAPP}?text=${encodeURIComponent("Bonjour, j'ai payé "+P.prix+" F pour l'abonnement "+P.nom+" PREP' CONCOURS BF.\nMon compte : "+shown({...ac,t:ac.type})+"\nRéférence de la transaction : ")}`,B=window.Android;if(B&&B.open)B.open(u);else window.open(u,"_blank");return}
   case"grant":{const c=normContact(($("#gc").value||"").trim()),tok=(($("#apin")||{}).value||"").trim();
     if(!c)return toast("Entre un numéro à 8 chiffres ou une adresse e-mail valide");if(!tok)return toast(ERR.notok);if(!C.ACCOUNT_URL)return toast(ERR.nourl);

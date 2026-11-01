@@ -56,3 +56,24 @@ Voir **DEPLOY.md** (Fly.io ou serveur loué, sauvegardes, dépannage).
 - Les comptes déjà activés avec l'ancienne version devront se réactiver une fois (nouveau code) pour obtenir une session.
 - Un seul serveur (SQLite) suffit pour des milliers d'utilisateurs ; au-delà, passer à PostgreSQL.
 - `npm test` : 26 tests (API, et vrai code de l'app contre le vrai serveur).
+
+## Paiement des abonnements par MSY PAY (MONDIASYSTEM)
+
+Les abonnements (1 500 F par mois, 3 000 F à vie) sont encaissés par **MONDIASYSTEM** grâce à MSY PAY
+Développeurs (Orange Money, Moov Money, Wave…). La répartition suit la convention PREP' CONCOURS BF /
+MONDIASYSTEM : **45 % des recettes nettes pour PREP' CONCOURS BF, 55 % pour MONDIASYSTEM**. Elle est
+calculée et tenue par MONDIASYSTEM (onglet « Mes revenus » de mondiasystem.com/store-publier).
+
+1. Sur `mondiasystem.com/store-publier`, carte « MSY PAY — achats intégrés » : indiquer l'adresse d'avis
+   `https://<ton-adresse>/msy-pay/avis`, puis **Créer ma clé API**. Copier aussitôt les deux secrets.
+2. Variables du serveur (jamais dans l'application, jamais dans Git) :
+   - `MSY_PAY_API_KEY` : la clé `msk_….mss_…` ;
+   - `MSY_PAY_WEBHOOK_SECRET` : le secret `whs_…` ;
+   - `MSY_PAY_RETURN_URL` : `https://<ton-adresse>/msy-pay/retour` ;
+   - facultatif : `PRIX_MOIS` (1500) et `PRIX_VIE` (3000), qui doivent rester égaux aux prix affichés dans l'application.
+3. Parcours : « Payer » dans l'application → page MSY PAY → paiement → MSY PAY prouve le paiement chez le
+   fournisseur et prévient le serveur (`POST /msy-pay/avis`, signé) → le serveur relit le statut et active
+   l'abonnement **une seule fois** ; « Vérifier mon abonnement » fait la même vérification si l'avis tarde.
+4. Suivi : `GET /admin/msy-payments` (paiements demandés, payés, appliqués).
+
+Sans ces trois variables, le paiement en ligne reste désactivé et le paiement manuel (code USSD + preuve) continue.
