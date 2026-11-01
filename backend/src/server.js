@@ -28,6 +28,9 @@ const cfg = {
   msyPayReturnUrl: env.MSY_PAY_RETURN_URL || "",
   prixMois: Number(env.PRIX_MOIS || 1500),
   prixVie: Number(env.PRIX_VIE || 3000),
+  // MSY Mail (MONDIASYSTEM) : e-mails signés DKIM depuis no-reply@mondiasystem.com — clé créée sur mondiasystem.com/msy-cloud
+  msyMailKey: env.MSY_MAIL_KEY || "",
+  msyMailUrl: env.MSY_MAIL_URL || "https://mondiasystem.com/api/cloud/apps/prep-concours/mail",
 };
 if (cfg.serverSecret.length < 16 || cfg.adminToken.length < 16) { console.error("SERVER_SECRET et ADMIN_TOKEN doivent faire au moins 16 caractères."); process.exit(1); }
 

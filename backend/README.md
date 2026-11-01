@@ -77,3 +77,16 @@ calculée et tenue par MONDIASYSTEM (onglet « Mes revenus » de mondiasystem.co
 4. Suivi : `GET /admin/msy-payments` (paiements demandés, payés, appliqués).
 
 Sans ces trois variables, le paiement en ligne reste désactivé et le paiement manuel (code USSD + preuve) continue.
+
+## E-mails (codes d'inscription) par MSY Mail (MONDIASYSTEM)
+
+Les codes d'activation envoyés par e-mail partent par **MSY Mail** dès que `MSY_MAIL_KEY` est défini : expéditeur
+`no-reply@mondiasystem.com` au nom de l'application, signé DKIM, donc reçu en boîte de réception.
+
+1. Sur `mondiasystem.com/msy-cloud`, application `prep-concours`, section « E-mails de l'application (MSY Mail) » :
+   **Créer ma clé d'envoi**, puis la copier aussitôt (affichée une seule fois).
+2. Variable du serveur : `MSY_MAIL_KEY` (jamais dans l'application ni dans Git), puis redéployer.
+3. Plafonds du pilote : 300 e-mails par jour, 5 par destinataire et par heure (au-delà : erreur 429).
+
+Sans `MSY_MAIL_KEY`, l'envoi reste celui de Resend (attention : l'expéditeur de test `onboarding@resend.dev` ne livre
+qu'au titulaire du compte Resend, d'où les codes jamais reçus).
