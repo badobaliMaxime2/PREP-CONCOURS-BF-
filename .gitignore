@@ -6,6 +6,7 @@ local.properties
 build/
 app/build/
 ios/PrepConcoursBF.xcodeproj/
+*.log
 
 # Backend
 backend/.env
